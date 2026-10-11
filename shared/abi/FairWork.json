@@ -971,69 +971,76 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "freelancer",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "termsHash",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "string",
-        "name": "termsURI",
-        "type": "string"
-      },
-      {
-        "internalType": "enum FairWork.PaymentMode",
-        "name": "mode",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint16",
-        "name": "latePenaltyBpsPerDay",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint16",
-        "name": "maxLatePenaltyBps",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint32",
-        "name": "reviewWindow",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint32",
-        "name": "graceWindow",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint8",
-        "name": "maxRevisions",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "amounts",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint64[]",
-        "name": "deadlines",
-        "type": "uint64[]"
-      },
-      {
-        "internalType": "uint16[]",
-        "name": "requiredProgressBps",
-        "type": "uint16[]"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "criteriaHashes",
-        "type": "bytes32[]"
+        "components": [
+          {
+            "internalType": "address",
+            "name": "freelancer",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "termsHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "string",
+            "name": "termsURI",
+            "type": "string"
+          },
+          {
+            "internalType": "enum FairWork.PaymentMode",
+            "name": "mode",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint16",
+            "name": "latePenaltyBpsPerDay",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "maxLatePenaltyBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint32",
+            "name": "reviewWindow",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "graceWindow",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint8",
+            "name": "maxRevisions",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "amounts",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint64[]",
+            "name": "deadlines",
+            "type": "uint64[]"
+          },
+          {
+            "internalType": "uint16[]",
+            "name": "requiredProgressBps",
+            "type": "uint16[]"
+          },
+          {
+            "internalType": "bytes32[]",
+            "name": "criteriaHashes",
+            "type": "bytes32[]"
+          }
+        ],
+        "internalType": "struct FairWork.CreateAgreementParams",
+        "name": "p",
+        "type": "tuple"
       }
     ],
     "name": "createAgreement",
@@ -1296,59 +1303,66 @@
     "name": "getDispute",
     "outputs": [
       {
-        "internalType": "uint64",
-        "name": "disputeRaisedTime",
-        "type": "uint64"
-      },
-      {
-        "internalType": "uint64",
-        "name": "disputeVotingDeadline",
-        "type": "uint64"
-      },
-      {
-        "internalType": "address[3]",
-        "name": "selectedArbitrators",
-        "type": "address[3]"
-      },
-      {
-        "internalType": "uint8",
-        "name": "voteCount",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint16",
-        "name": "aiFreelancerShareBps",
-        "type": "uint16"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "aiReportHash",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bool",
-        "name": "hasAiRecommendation",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "resolved",
-        "type": "bool"
-      },
-      {
-        "internalType": "uint16",
-        "name": "finalFreelancerShareBps",
-        "type": "uint16"
-      },
-      {
-        "internalType": "string",
-        "name": "resolutionMethod",
-        "type": "string"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "evidenceHashes",
-        "type": "bytes32[]"
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "disputeRaisedTime",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "disputeVotingDeadline",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address[3]",
+            "name": "selectedArbitrators",
+            "type": "address[3]"
+          },
+          {
+            "internalType": "uint8",
+            "name": "voteCount",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint16",
+            "name": "aiFreelancerShareBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "aiReportHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bool",
+            "name": "hasAiRecommendation",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "resolved",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint16",
+            "name": "finalFreelancerShareBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "string",
+            "name": "resolutionMethod",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes32[]",
+            "name": "evidenceHashes",
+            "type": "bytes32[]"
+          }
+        ],
+        "internalType": "struct FairWork.DisputeView",
+        "name": "",
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",

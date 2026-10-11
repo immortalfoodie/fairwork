@@ -602,6 +602,7 @@ async function handleMockRequest(endpoint, options = {}) {
     const ag = mockStore.data.agreements.find(a => a.id === agId);
     if (!ag) throw new ApiError(404, 'NOT_FOUND', 'Agreement not found');
 
+    if (!ag.disputes) ag.disputes = {};
     if (!ag.disputes[idx]) {
       ag.disputes[idx] = {
         idx,
@@ -616,7 +617,9 @@ async function handleMockRequest(endpoint, options = {}) {
         resolved: false,
         aiSummary: null
       };
-      ag.milestones[idx].status = 'Disputed';
+      if (ag.milestones && ag.milestones[idx]) {
+        ag.milestones[idx].status = 'Disputed';
+      }
       ag.status = 'Disputed';
     }
 

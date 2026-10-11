@@ -32,6 +32,7 @@ router.get('/:id/milestones/:idx/progress', MilestoneController.getById);
 
 // Dispute sub-routes
 router.get('/:id/milestones/:idx/dispute', DisputeController.getById);
+router.post('/:id/milestones/:idx/evidence', DisputeController.submitMilestoneEvidence);
 router.post('/:id/milestones/:idx/ai-summary', DisputeController.generateAiSummary);
 
 export default router;

@@ -145,7 +145,7 @@ export class DisputeService {
   }
 
   static async getById(id: string) {
-    const dispute = await prisma.dispute.findUnique({
+    let dispute = await prisma.dispute.findUnique({
       where: { id },
       include: {
         agreement: {
@@ -163,8 +163,81 @@ export class DisputeService {
     });
 
     if (!dispute) {
+      dispute = await prisma.dispute.findFirst({
+        where: { agreementId: id },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          agreement: {
+            include: {
+              client: { select: { id: true, walletAddress: true, name: true } },
+              freelancer: { select: { id: true, walletAddress: true, name: true } },
+            },
+          },
+          evidences: {
+            include: {
+              uploadedBy: { select: { id: true, walletAddress: true, name: true } },
+            },
+          },
+        },
+      });
+    }
+
+    if (!dispute) {
       throw new Error('Dispute not found');
     }
     return dispute;
   }
+
+  static async submitMilestoneEvidence(
+    agreementId: string,
+    idx: number,
+    userId: string,
+    text: string,
+    files?: string[]
+  ) {
+    let dispute = await prisma.dispute.findFirst({
+      where: { agreementId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!dispute) {
+      dispute = await prisma.dispute.create({
+        data: {
+          agreementId,
+          raisedById: userId,
+          reason: text || `Dispute raised on Milestone #${idx + 1}`,
+          status: 'OPEN',
+        },
+      });
+
+      await prisma.agreement.update({
+        where: { id: agreementId },
+        data: { status: 'DISPUTED' },
+      });
+
+      await prisma.milestone.updateMany({
+        where: { agreementId, milestoneIndex: idx },
+        data: { status: 'DISPUTED' },
+      });
+    }
+
+    const contentHash = computeSha256(Buffer.from(text || 'evidence', 'utf8'));
+    const evidence = await prisma.evidence.create({
+      data: {
+        disputeId: dispute.id,
+        agreementId,
+        uploadedById: userId,
+        filename: files?.[0] || 'evidence_statement.txt',
+        originalName: files?.[0] || 'evidence_statement.txt',
+        mimeType: 'text/plain',
+        sizeBytes: Buffer.byteLength(text || '', 'utf8'),
+        storagePath: 'memory://text',
+        contentHash,
+        description: text,
+      },
+    });
+
+    return { dispute, evidence };
+  }
 }
+

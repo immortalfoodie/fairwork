@@ -11,6 +11,7 @@
     "seed": "npm --prefix \"PERSON1 YASH NAIK/contracts\" run seed",
     "setup": "node scripts/setup-demo.js",
     "ai": "powershell -Command \"& 'PERSON3 YASHDEEP/venv/Scripts/python.exe' -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --app-dir 'PERSON3 YASHDEEP'\"",
+    "backend": "npm --prefix \"PERSON2 DHRUV/backend\" run dev",
     "build": "npm --prefix \"PERSON4 SUZAN\" run build",
     "build:frontend": "npm --prefix \"PERSON4 SUZAN\" run build",
     "frontend": "npm --prefix \"PERSON4 SUZAN\" run dev",

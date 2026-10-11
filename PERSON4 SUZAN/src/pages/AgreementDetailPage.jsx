@@ -385,8 +385,10 @@ export default function AgreementDetailPage({ agreementId, onBack }) {
         onClose={() => setIsRaiseDisputeOpen(false)}
         agreementId={agreement.id}
         onchainId={agreement.onchainId}
-        milestoneIdx={disputeMilestoneIdx}
-        onSuccess={loadAllAgreementData}
+        onSuccess={() => {
+          loadAllAgreementData();
+          setActiveTab('disputes');
+        }}
       />
 
       {/* Export Contract Legal Certificate Modal */}

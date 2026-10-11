@@ -4,6 +4,6 @@
   "network": "localhost",
   "chainId": 31337,
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "deployedAt": "2026-10-11T01:56:39.499Z",
-  "transactionHash": "0x2798cc01cb11b281d5f9732526dcaec33b3544faa70820ac68e6e95e465cb5d0"
+  "deployedAt": "2026-10-11T09:23:25.395Z",
+  "transactionHash": "0x50812c003f18d08faa7df8c882cc63a564c2cb076694b8c01d6438ced1fdf3f2"
 }

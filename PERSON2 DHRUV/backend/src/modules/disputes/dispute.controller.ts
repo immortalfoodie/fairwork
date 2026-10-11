@@ -60,4 +60,23 @@ export class DisputeController {
       next(error);
     }
   }
+
+  static async submitMilestoneEvidence(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const { id, idx } = req.params;
+      const text = (req.body.text || req.body.reason || '') as string;
+      const files = req.body.files as string[] | undefined;
+      const result = await DisputeService.submitMilestoneEvidence(
+        id,
+        parseInt(idx, 10),
+        req.user!.id,
+        text,
+        files
+      );
+      return sendSuccess(res, result, 201, 'Dispute evidence recorded');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+

@@ -16,7 +16,7 @@ export default function ArbitratorVoteCard({
   milestoneIdx,
   onDisputeUpdated
 }) {
-  const { address } = useWallet();
+  const { address, isMock } = useWallet() || {};
   const toast = useToast();
 
   const [freelancerShareBps, setFreelancerShareBps] = useState(7000);
@@ -35,17 +35,31 @@ export default function ArbitratorVoteCard({
       setIsCastingVote(true);
       let toastId = null;
 
-      await txCastVote(onchainId || 1, milestoneIdx, freelancerShareBps, {
-        onPending: (hash) => {
-          toastId = toast.pendingTx(hash, `Casting arbitrator vote: ${formatBps(freelancerShareBps)} share...`);
-        },
-        onSuccess: (rec) => {
-          if (toastId) toast.confirmedTx(toastId, rec.hash, 'Vote recorded on-chain!');
-        },
-        onError: (err) => {
-          if (toastId) toast.failedTx(toastId, err);
+      if (onchainId !== null && onchainId !== undefined) {
+        try {
+          await txCastVote(onchainId, milestoneIdx, freelancerShareBps, {
+            onPending: (hash) => {
+              toastId = toast.pendingTx(hash, `Casting arbitrator vote: ${formatBps(freelancerShareBps)} share...`);
+            },
+            onSuccess: (rec) => {
+              if (toastId) toast.confirmedTx(toastId, rec.hash, 'Vote recorded on-chain!');
+            },
+            onError: (err) => {
+              if (toastId) toast.failedTx(toastId, err);
+            }
+          });
+        } catch (chainErr) {
+          if (isMock) {
+            console.warn('On-chain castVote skipped in mock mode:', chainErr?.message || chainErr);
+            if (dispute) {
+              if (!dispute.votes) dispute.votes = {};
+              dispute.votes[(address || arbitrators[0]).toLowerCase()] = freelancerShareBps;
+            }
+          } else {
+            throw chainErr;
+          }
         }
-      });
+      }
 
       toast.success('Vote cast successfully!');
       if (onDisputeUpdated) onDisputeUpdated();
@@ -61,17 +75,31 @@ export default function ArbitratorVoteCard({
       setIsFinalizing(true);
       let toastId = null;
 
-      await txFinalizeDispute(onchainId || 1, milestoneIdx, {
-        onPending: (hash) => {
-          toastId = toast.pendingTx(hash, 'Finalizing dispute resolution on-chain...');
-        },
-        onSuccess: (rec) => {
-          if (toastId) toast.confirmedTx(toastId, rec.hash, 'Dispute resolved and funds distributed!');
-        },
-        onError: (err) => {
-          if (toastId) toast.failedTx(toastId, err);
+      if (onchainId !== null && onchainId !== undefined) {
+        try {
+          await txFinalizeDispute(onchainId, milestoneIdx, {
+            onPending: (hash) => {
+              toastId = toast.pendingTx(hash, 'Finalizing dispute resolution on-chain...');
+            },
+            onSuccess: (rec) => {
+              if (toastId) toast.confirmedTx(toastId, rec.hash, 'Dispute resolved and funds distributed!');
+            },
+            onError: (err) => {
+              if (toastId) toast.failedTx(toastId, err);
+            }
+          });
+        } catch (chainErr) {
+          if (isMock) {
+            console.warn('On-chain finalizeDispute skipped in mock mode:', chainErr?.message || chainErr);
+            if (dispute) {
+              dispute.resolved = true;
+              dispute.status = 'Resolved';
+            }
+          } else {
+            throw chainErr;
+          }
         }
-      });
+      }
 
       toast.success('Dispute finalized and escrow split executed!');
       if (onDisputeUpdated) onDisputeUpdated();
