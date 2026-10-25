@@ -16,7 +16,7 @@ import {
 import { Card, Button, Badge } from '../components/ui/index.js';
 
 export default function LandingPage({ setActivePage, onOpenAgreement }) {
-  const { isConnected, connectWallet, openConnectModal } = useWallet();
+  const { isConnected, connectWallet, openConnectModal, isMock, toggleAppMode } = useWallet();
 
   const threeSteps = [
     {
@@ -63,9 +63,25 @@ export default function LandingPage({ setActivePage, onOpenAgreement }) {
     <div className="space-y-20 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto animate-fade-in">
       {/* Hero Section */}
       <section className="text-center space-y-6 pt-6 max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sage border border-forest/20 text-forest text-xs font-heading font-semibold">
-          <ShieldCheck className="w-4 h-4 text-coral" />
-          <span>SANKALP · Bridging Work and Trust</span>
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sage border border-forest/20 text-forest text-xs font-heading font-semibold">
+            <ShieldCheck className="w-4 h-4 text-coral" />
+            <span>SANKALP · Bridging Work and Trust</span>
+          </div>
+
+          <button
+            onClick={() => toggleAppMode && toggleAppMode()}
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-heading font-bold border transition-all cursor-pointer shadow-xs ${
+              !isMock
+                ? 'bg-emerald-50 border-emerald-400 text-emerald-950 hover:bg-emerald-100'
+                : 'bg-amber-50 border-amber-400 text-amber-950 hover:bg-amber-100'
+            }`}
+            title="Click to toggle between Live and Demo modes"
+          >
+            <span className={`w-2 h-2 rounded-full ${!isMock ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+            <span>{!isMock ? '🟢 Live Mode Active' : '🟡 Demo Mode Active'}</span>
+            <span className="text-[10px] font-mono uppercase bg-black/5 px-1 rounded ml-1">Switch</span>
+          </button>
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-heading font-bold text-ink tracking-tight leading-[1.1]">

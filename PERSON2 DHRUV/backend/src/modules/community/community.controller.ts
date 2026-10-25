@@ -61,6 +61,16 @@ export class CommunityController {
     }
   }
 
+  static async acceptProposal(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const proposalId = req.params.id || (req.params as any).proposalId;
+      const result = await CommunityService.acceptProposal(proposalId, req.user!.id);
+      return sendSuccess(res, result, 200, 'Proposal accepted');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // Threads & Messages
   static async createThread(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
@@ -85,6 +95,15 @@ export class CommunityController {
     try {
       const thread = await CommunityService.getThreadById(req.params.id, req.user!.id);
       return sendSuccess(res, thread);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getMessages(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const thread = await CommunityService.getThreadById(req.params.id, req.user!.id);
+      return sendSuccess(res, thread.messages || []);
     } catch (error) {
       next(error);
     }

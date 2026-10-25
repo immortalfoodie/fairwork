@@ -51,12 +51,16 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated, onCrea
         .map(s => s.trim())
         .filter(Boolean);
 
+      const numMatch = budget.match(/[\d.]+/);
+      const parsedBudget = numMatch ? parseFloat(numMatch[0]) : 1.0;
+
       const postData = {
         type,
         title: title.trim(),
         description: description.trim(),
-        budget: (budget.includes('ETH') || budget.includes('MATIC')) ? budget.replace('MATIC', 'ETH').trim() : `${budget.trim()} ETH`,
+        budget: parsedBudget,
         skills,
+        tags: skills,
         // Include type-specific fields
         ...(isJob
           ? {

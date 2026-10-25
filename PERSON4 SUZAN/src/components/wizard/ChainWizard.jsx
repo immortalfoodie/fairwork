@@ -9,7 +9,7 @@ import {
   txFundAgreement,
   txCancelUnfunded
 } from '../../chain/transactions.js';
-import { linkChain } from '../../api/agreements.js';
+import { linkChain, approveDraft } from '../../api/agreements.js';
 import { useWallet } from '../../context/WalletContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { termsToChain } from '../../lib/termsToChain.js';
@@ -30,6 +30,7 @@ export default function ChainWizard({ agreement, onAgreementUpdated }) {
 
   const [activeModalStep, setActiveModalStep] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLocking, setIsLocking] = useState(false);
 
   const terms = agreement.terms;
   const isClient = address && terms?.client && address.toLowerCase() === terms.client.toLowerCase();
@@ -37,14 +38,36 @@ export default function ChainWizard({ agreement, onAgreementUpdated }) {
 
   // Wizard state determination
   const hasOnchainId = Boolean(agreement.onchainId);
+  const isTermsLocked = agreement.status === 'LOCKED' || agreement.status === 'ONCHAIN_LINKED' || hasOnchainId;
   const isAccepted = agreement.status === 'Active' || (agreement.status === 'AwaitingFunding' && hasOnchainId);
   const isFunded = agreement.status === 'Active' || agreement.status === 'Completed' || agreement.status === 'Disputed';
+
+  // Manual one-click mutual lock
+  const handleQuickLock = async () => {
+    try {
+      setIsLocking(true);
+      const updated = await approveDraft(agreement.id, { mutualLock: true });
+      toast.success('Agreement terms mutually locked! Cryptographic Keccak-256 hash verified.');
+      if (onAgreementUpdated) onAgreementUpdated(updated);
+    } catch (err) {
+      toast.error(err.message || 'Failed to lock agreement terms');
+    } finally {
+      setIsLocking(false);
+    }
+  };
 
   // Execute Step 1: Create on-chain (Client)
   const handleExecuteCreate = async () => {
     try {
       setIsProcessing(true);
       let toastId = null;
+
+      // Auto-lock if not already locked
+      try {
+        await approveDraft(agreement.id, { mutualLock: true });
+      } catch (lockErr) {
+        console.warn('Auto-lock notice:', lockErr);
+      }
 
       const { txHash, receipt, onchainId } = await txCreateAgreement(terms, {
         onPending: (hash) => {

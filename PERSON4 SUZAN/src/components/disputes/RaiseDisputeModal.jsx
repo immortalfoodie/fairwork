@@ -12,7 +12,7 @@ export default function RaiseDisputeModal({
   onClose,
   agreementId,
   onchainId,
-  milestoneIdx,
+  milestoneIdx = 0,
   onSuccess
 }) {
   const { isMock } = useWallet() || {};
@@ -20,6 +20,8 @@ export default function RaiseDisputeModal({
   const [evidenceText, setEvidenceText] = useState('');
   const [fileSim, setFileSim] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const idx = Number(milestoneIdx ?? 0);
 
   const handleRaise = async (e) => {
     e.preventDefault();
@@ -34,7 +36,7 @@ export default function RaiseDisputeModal({
 
       // Step 1: Record evidence and dispute in platform backend / mock store
       try {
-        await apiSubmitEvidence(agreementId, milestoneIdx, {
+        await apiSubmitEvidence(agreementId, idx, {
           text: evidenceText.trim(),
           files: fileSim ? [fileSim.trim()] : []
         });
@@ -46,7 +48,7 @@ export default function RaiseDisputeModal({
       const canTransactOnChain = onchainId !== null && onchainId !== undefined;
       if (canTransactOnChain) {
         try {
-          await txRaiseDispute(onchainId, milestoneIdx, evidenceText.trim(), {
+          await txRaiseDispute(onchainId, idx, evidenceText.trim(), {
             onPending: (hash) => {
               toastId = toast.pendingTx(hash, 'Raising dispute and locking milestone on-chain...');
             },
@@ -85,7 +87,7 @@ export default function RaiseDisputeModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Raise Dispute on Milestone #${milestoneIdx + 1}`}
+      title={`Raise Dispute on Milestone #${idx + 1}`}
       subtitle="Freeze escrow funds and escalate deliverables to 3 decentralized arbitrators"
       maxWidth="max-w-lg"
     >

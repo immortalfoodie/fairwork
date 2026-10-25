@@ -77,26 +77,33 @@ export default function EvidenceThread({
         {evidenceList.length === 0 ? (
           <p className="text-xs text-ink/50 py-2 italic">No evidence recorded yet.</p>
         ) : (
-          evidenceList.map((item) => (
-            <div
-              key={item.id}
-              className="p-3.5 rounded-card bg-ivory border border-gray space-y-2 text-xs"
-            >
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <AddressChip address={item.author} showExplorer={false} />
-                <span className="text-[11px] text-ink/50 font-mono">
-                  {formatRelativeTime(item.createdAt)}
-                </span>
-              </div>
-              <p className="text-ink leading-relaxed whitespace-pre-line">{item.text}</p>
-              {item.evidenceHash && (
-                <div className="text-[10px] text-ink/60 font-mono flex items-center gap-1 pt-1.5 border-t border-gray">
-                  <ShieldCheck className="w-3.5 h-3.5 text-forest" />
-                  <span>Evidence Hash: {shortenAddress(item.evidenceHash, 6)}</span>
+          evidenceList.map((item, idx) => {
+            const author = item.author || item.uploadedBy?.walletAddress || (typeof item.uploadedBy === 'string' ? item.uploadedBy : '0x0000000000000000000000000000000000000000');
+            const text = item.text || item.description || item.reason || 'Evidence statement submitted.';
+            const hash = item.evidenceHash || item.contentHash;
+            const time = item.createdAt || item.timestamp || Date.now();
+
+            return (
+              <div
+                key={item.id || idx}
+                className="p-3.5 rounded-card bg-ivory border border-gray space-y-2 text-xs"
+              >
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <AddressChip address={author} showExplorer={false} />
+                  <span className="text-[11px] text-ink/50 font-mono">
+                    {formatRelativeTime(time)}
+                  </span>
                 </div>
-              )}
-            </div>
-          ))
+                <p className="text-ink leading-relaxed whitespace-pre-line">{text}</p>
+                {hash && (
+                  <div className="text-[10px] text-ink/60 font-mono flex items-center gap-1 pt-1.5 border-t border-gray">
+                    <ShieldCheck className="w-3.5 h-3.5 text-forest" />
+                    <span>Evidence Hash: {shortenAddress(hash, 6)}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
 

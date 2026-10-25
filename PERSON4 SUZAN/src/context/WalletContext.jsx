@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Wallet } from 'ethers';
-import { getProvider, switchNetwork as switchChainNetwork, fetchContractConfig } from '../chain/contract.js';
+import { getProvider, switchNetwork as switchChainNetwork, fetchContractConfig, SUPPORTED_NETWORKS } from '../chain/contract.js';
 import { getNonce, verifySignature } from '../api/auth.js';
 import { getMe } from '../api/users.js';
 import { DEMO_ACCOUNTS, mockStore } from '../mock/mockStore.js';
@@ -18,7 +18,12 @@ export function WalletProvider({ children }) {
   const [jwt, setJwt] = useState(localStorage.getItem('fairwork_jwt'));
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
-  const isMock = import.meta.env.VITE_USE_MOCK === 'true';
+  const [appMode, setAppModeState] = useState(() => {
+    const saved = localStorage.getItem('fairwork_app_mode');
+    if (saved === 'live' || saved === 'demo') return saved;
+    return import.meta.env.VITE_USE_MOCK === 'true' ? 'demo' : 'live';
+  });
+  const isMock = appMode === 'demo';
 
   // Load configuration on mount
   useEffect(() => {
@@ -41,18 +46,11 @@ export function WalletProvider({ children }) {
     let savedAddr = localStorage.getItem('fairwork_user_address');
     let savedJwt = localStorage.getItem('fairwork_jwt');
 
-    // Auto-migrate legacy Hardhat addresses to new configured Sepolia personas
-    const OLD_ADDRESS_MAP = {
-      '0x70997970c51812dc3a010c7d01b50e0d17dc79c8': DEMO_ACCOUNTS.CLIENT.address.toLowerCase(),
-      '0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc': DEMO_ACCOUNTS.FREELANCER.address.toLowerCase(),
-      '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266': DEMO_ACCOUNTS.DEPLOYER.address.toLowerCase(),
-    };
-
-    if (savedAddr && OLD_ADDRESS_MAP[savedAddr.toLowerCase()]) {
-      savedAddr = OLD_ADDRESS_MAP[savedAddr.toLowerCase()];
-      savedJwt = `mock-token-${savedAddr}`;
-      localStorage.setItem('fairwork_user_address', savedAddr);
-      localStorage.setItem('fairwork_jwt', savedJwt);
+    // In live mode, ensure we do not carry over stale mock tokens
+    if (!isMock && savedJwt && savedJwt.startsWith('mock-token-')) {
+      localStorage.removeItem('fairwork_jwt');
+      savedJwt = null;
+      setJwt(null);
     }
 
     if (savedAddr && savedJwt) {
@@ -69,6 +67,12 @@ export function WalletProvider({ children }) {
       setJwt(fakeToken);
       localStorage.setItem('fairwork_user_address', clientAddr);
       localStorage.setItem('fairwork_jwt', fakeToken);
+    } else if (!isMock && !savedJwt) {
+      // In live mode with no active session, auto-authenticate with Alice (Client) Hardhat Account #1
+      const demoClient = DEMO_ACCOUNTS.CLIENT;
+      if (demoClient.privateKey) {
+        connectWithDemoAccount('CLIENT').catch(() => {});
+      }
     }
   }, [isMock]);
 
@@ -76,7 +80,13 @@ export function WalletProvider({ children }) {
   useEffect(() => {
     if (typeof window !== 'undefined' && window.ethereum) {
       window.ethereum.request({ method: 'eth_chainId' })
-        .then(hexId => setChainId(parseInt(hexId, 16)))
+        .then(hexId => {
+          const id = parseInt(hexId, 16);
+          setChainId(id);
+          if (SUPPORTED_NETWORKS[id]) {
+            setConfiguredChainId(id);
+          }
+        })
         .catch(() => {});
 
       const handleAccountsChanged = (accounts) => {
@@ -91,7 +101,11 @@ export function WalletProvider({ children }) {
       };
 
       const handleChainChanged = (hexId) => {
-        setChainId(parseInt(hexId, 16));
+        const id = parseInt(hexId, 16);
+        setChainId(id);
+        if (SUPPORTED_NETWORKS[id]) {
+          setConfiguredChainId(id);
+        }
       };
 
       window.ethereum.on('accountsChanged', handleAccountsChanged);
@@ -234,7 +248,9 @@ export function WalletProvider({ children }) {
 
   const handleSwitchNetwork = async (targetId) => {
     try {
-      const netId = Number(targetId || configuredChainId);
+      const netId = (typeof targetId === 'number' || typeof targetId === 'string') && !isNaN(Number(targetId))
+        ? Number(targetId)
+        : (configuredChainId || 31337);
       await switchChainNetwork(netId);
       setChainId(netId);
       setConfiguredChainId(netId);
@@ -248,6 +264,35 @@ export function WalletProvider({ children }) {
     await connectWithDemoAccount(accountKey);
   };
 
+  const toggleAppMode = (targetMode) => {
+    const nextMode = targetMode || (appMode === 'live' ? 'demo' : 'live');
+    localStorage.setItem('fairwork_app_mode', nextMode);
+    setAppModeState(nextMode);
+
+    if (nextMode === 'demo') {
+      const demoClient = DEMO_ACCOUNTS.CLIENT;
+      const clientAddr = demoClient.address.toLowerCase();
+      const fakeToken = `mock-token-${clientAddr}`;
+      localStorage.setItem('fairwork_user_address', clientAddr);
+      localStorage.setItem('fairwork_jwt', fakeToken);
+      setAddress(clientAddr);
+      setUser(demoClient);
+      setJwt(fakeToken);
+      toast.info('Switched to Demo Mode (offline simulation)');
+    } else {
+      const savedJwt = localStorage.getItem('fairwork_jwt');
+      if (savedJwt && savedJwt.startsWith('mock-token-')) {
+        localStorage.removeItem('fairwork_jwt');
+        setJwt(null);
+      }
+      toast.info('Switched to Live Mode (on-chain EVM & live AI engine)');
+    }
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 300);
+  };
+
   const refreshUser = async () => {
     try {
       const u = await getMe();
@@ -257,7 +302,7 @@ export function WalletProvider({ children }) {
     }
   };
 
-  const isWrongNetwork = Boolean(chainId && configuredChainId && chainId !== configuredChainId);
+  const isWrongNetwork = Boolean(chainId && !SUPPORTED_NETWORKS[chainId]);
   const isOwner = Boolean(
     address && (
       (user && user.role === 'ADMIN') ||
@@ -274,6 +319,8 @@ export function WalletProvider({ children }) {
         contractAddress,
         user,
         jwt,
+        appMode,
+        toggleAppMode,
         isConnected: Boolean(address && jwt),
         isOwner,
         isConnecting,

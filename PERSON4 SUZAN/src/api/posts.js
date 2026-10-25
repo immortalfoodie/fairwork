@@ -1,4 +1,5 @@
 import { apiFetch } from './client.js';
+import { mockStore } from '../mock/mockStore.js';
 
 /**
  * Normalize post schema from backend or mock
@@ -26,13 +27,20 @@ export function normalizePost(p) {
     ? (p.author.name || '')
     : (p.authorName || '');
 
+  let budgetStr = p.budget;
+  if (typeof p.budget === 'number') {
+    budgetStr = `${p.budget} ETH`;
+  } else if (!budgetStr) {
+    budgetStr = 'Negotiable';
+  }
+
   return {
     ...p,
     author: authorAddr,
     authorName,
     authorObj: typeof p.author === 'object' ? p.author : null,
     skills,
-    budget: typeof p.budget === 'number' ? `${p.budget} MATIC` : (p.budget || 'Negotiable'),
+    budget: budgetStr,
     proposalsCount: p.proposalsCount ?? p._count?.proposals ?? 0
   };
 }
@@ -50,12 +58,19 @@ export function normalizeProposal(prop) {
     ? (prop.freelancer.name || 'Freelancer')
     : (prop.authorName || 'Freelancer');
 
+  let price = prop.price;
+  if (!price && prop.proposedBudget !== undefined) {
+    price = `${prop.proposedBudget} ETH`;
+  } else if (!price) {
+    price = 'Negotiable';
+  }
+
   return {
     ...prop,
     author: authorAddr,
     authorName,
     message: prop.coverLetter || prop.message || '',
-    price: prop.proposedBudget !== undefined ? `${prop.proposedBudget} MATIC` : (prop.price || '0 MATIC')
+    price
   };
 }
 
@@ -101,11 +116,28 @@ export async function createPost(postData) {
  * GET /posts/:id/proposals
  */
 export async function getProposals(postId) {
-  const data = await apiFetch(`/posts/${postId}/proposals`);
-  if (Array.isArray(data)) {
-    return data.map(normalizeProposal);
+  let list = [];
+  try {
+    const data = await apiFetch(`/posts/${postId}/proposals`);
+    if (Array.isArray(data)) {
+      list = data.map(normalizeProposal);
+    }
+  } catch (err) {
+    console.warn('API getProposals error:', err);
   }
-  return data;
+
+  // Also check mockStore proposals for this post (syncing live and demo seamlessly)
+  if (typeof window !== 'undefined' && mockStore?.data?.proposals?.[postId]) {
+    const mockList = (mockStore.data.proposals[postId] || []).map(normalizeProposal);
+    const existingIds = new Set(list.map(p => p.id));
+    for (const m of mockList) {
+      if (!existingIds.has(m.id)) {
+        list.push(m);
+      }
+    }
+  }
+
+  return list;
 }
 
 /**
@@ -117,5 +149,26 @@ export async function createProposal(postId, proposalData) {
     method: 'POST',
     body: JSON.stringify(proposalData)
   });
-  return normalizeProposal(data);
+  const created = normalizeProposal(data);
+
+  // Always mirror in mockStore for seamless cross-mode accessibility
+  if (typeof window !== 'undefined' && mockStore?.data && created) {
+    if (!mockStore.data.proposals) mockStore.data.proposals = {};
+    if (!mockStore.data.proposals[postId]) mockStore.data.proposals[postId] = [];
+    mockStore.data.proposals[postId].unshift(created);
+    mockStore.save();
+  }
+
+  return created;
+}
+
+/**
+ * Accept a proposal and initiate/draft escrow agreement
+ * POST /posts/:postId/proposals/:proposalId/accept
+ */
+export async function acceptProposal(proposalId, postId) {
+  const data = await apiFetch(`/posts/${postId}/proposals/${proposalId}/accept`, {
+    method: 'POST'
+  });
+  return data;
 }

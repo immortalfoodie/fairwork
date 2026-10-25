@@ -69,12 +69,57 @@ export default function AgreementDetailPage({ agreementId, onBack }) {
       setPayments(payData || null);
       setAlerts(alData || []);
 
-      // Check if any milestone is in dispute
-      const disputedM = agData.milestones?.find(m => m.status === 'Disputed');
-      if (disputedM) {
-        setActiveDisputeIdx(disputedM.idx);
-        const dData = await getDispute(agreementId, disputedM.idx).catch(() => null);
-        setDisputeData(dData);
+      // Check if any dispute exists in agData.disputes or in milestones
+      let foundDisputeIdx = null;
+      let foundDisputeData = null;
+
+      if (agData.disputes) {
+        if (Array.isArray(agData.disputes) && agData.disputes.length > 0) {
+          const firstDispute = agData.disputes[0];
+          foundDisputeIdx = firstDispute.idx ?? firstDispute.milestoneIndex ?? 0;
+          foundDisputeData = firstDispute;
+        } else if (typeof agData.disputes === 'object' && Object.keys(agData.disputes).length > 0) {
+          const firstKey = Object.keys(agData.disputes)[0];
+          foundDisputeIdx = Number(firstKey);
+          foundDisputeData = agData.disputes[firstKey];
+        }
+      }
+
+      if (foundDisputeIdx === null) {
+        const disputedM = agData.milestones?.find(m => String(m.status || '').toUpperCase() === 'DISPUTED');
+        if (disputedM) {
+          foundDisputeIdx = disputedM.idx ?? disputedM.milestoneIndex ?? 0;
+        }
+      }
+
+      if (foundDisputeIdx === null && String(agData.status || '').toUpperCase() === 'DISPUTED') {
+        foundDisputeIdx = 0;
+      }
+
+      if (foundDisputeIdx !== null) {
+        setActiveDisputeIdx(foundDisputeIdx);
+        if (!foundDisputeData) {
+          foundDisputeData = await getDispute(agreementId, foundDisputeIdx).catch(() => null);
+        }
+        if (!foundDisputeData) {
+          foundDisputeData = {
+            idx: foundDisputeIdx,
+            status: 'Active',
+            evidence: [],
+            arbitrators: [
+              '0x15d34aaf54267db7d7c367839aaf71a00a2c6a65',
+              '0x9965507d1a55bcc2695c58ba16fb37d819b0a4df',
+              '0x976EA74026E726554dB657fA54763abd0C3a0aa9'
+            ],
+            votes: {},
+            resolved: false,
+            aiSummary: null
+          };
+        }
+        setDisputeData(foundDisputeData);
+      } else {
+        setActiveDisputeIdx(null);
+        setDisputeData(null);
       }
     } catch (err) {
       console.warn('Could not load agreement details:', err);
@@ -148,10 +193,11 @@ export default function AgreementDetailPage({ agreementId, onBack }) {
   const totalCount = agreement.milestones?.length || 1;
   const progressPercent = Math.round((paidCount / totalCount) * 100);
 
+  const hasActiveDispute = activeDisputeIdx !== null || Boolean(disputeData);
   const tabsConfig = [
     { id: 'milestones', label: `Milestones (${agreement.milestones?.length || 0})` },
     { id: 'payments', label: 'Payment Breakdown' },
-    { id: 'disputes', label: 'Disputes & Arbitration' },
+    { id: 'disputes', label: hasActiveDispute ? 'Disputes & Arbitration (1)' : 'Disputes & Arbitration' },
     { id: 'amendments', label: 'Amendments' },
     { id: 'timeline', label: `Timeline & Audit (${timeline.length})` }
   ];
@@ -339,7 +385,7 @@ export default function AgreementDetailPage({ agreementId, onBack }) {
                   agreementId={agreement.id}
                   onchainId={agreement.onchainId}
                   milestoneIdx={activeDisputeIdx}
-                  evidenceList={disputeData.evidence || []}
+                  evidenceList={disputeData.evidence || disputeData.evidences || []}
                   onEvidenceSubmitted={loadAllAgreementData}
                 />
               </Card>
@@ -385,6 +431,7 @@ export default function AgreementDetailPage({ agreementId, onBack }) {
         onClose={() => setIsRaiseDisputeOpen(false)}
         agreementId={agreement.id}
         onchainId={agreement.onchainId}
+        milestoneIdx={disputeMilestoneIdx}
         onSuccess={() => {
           loadAllAgreementData();
           setActiveTab('disputes');

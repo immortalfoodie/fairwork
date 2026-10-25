@@ -24,7 +24,7 @@ async function main() {
   console.log('Seeding users...');
   const userClient = await prisma.user.create({
     data: {
-      walletAddress: '0x5eD39B1d5EF7962bb70c7Ac09F9016fE7a00E7E4',
+      walletAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
       nonce: 'seed_nonce_client_alice',
       role: 'CLIENT',
       name: 'Alice Client',
@@ -36,7 +36,7 @@ async function main() {
 
   const userFreelancer = await prisma.user.create({
     data: {
-      walletAddress: '0x9908CAB15D339845c83775120F3f8373583Cc476',
+      walletAddress: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
       nonce: 'seed_nonce_freelancer_bob',
       role: 'FREELANCER',
       name: 'Bob Freelancer',
@@ -48,7 +48,7 @@ async function main() {
 
   const userDeployer = await prisma.user.create({
     data: {
-      walletAddress: '0x3fCDb56bCFeFf21Cd18593E97C70aA95DB44E0f2',
+      walletAddress: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
       nonce: 'seed_nonce_deployer_admin',
       role: 'ADMIN',
       name: 'Deployer / Admin',

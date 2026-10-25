@@ -34,6 +34,8 @@ export default function TopBar({
     openConnectModal,
     disconnectWallet,
     switchDemoAccount,
+    appMode,
+    toggleAppMode,
     isMock,
     chainId,
     configuredChainId,
@@ -185,33 +187,71 @@ export default function TopBar({
             )}
           </div>
 
-          {/* Quick Demo Persona Switcher */}
-          {isMock && (
-            <div className="flex items-center bg-white border border-gray rounded-full p-0.5 shadow-xs">
-              <button
-                onClick={() => switchDemoAccount('CLIENT')}
-                className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-heading font-semibold transition-all ${
-                  (user?.role || '').toUpperCase() === 'CLIENT'
-                    ? 'bg-forest text-ivory shadow-xs'
-                    : 'text-ink/60 hover:text-ink hover:bg-sage/40'
+          {/* Dynamic Mode Switcher Button: Live Mode vs Demo Mode */}
+          <button
+            onClick={() => toggleAppMode && toggleAppMode()}
+            className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-[10px] border-2 font-heading font-bold text-xs transition-all shadow-xs active:translate-y-0.5 cursor-pointer ${
+              !isMock
+                ? 'bg-emerald-50 border-emerald-600 text-emerald-950 hover:bg-emerald-100 hover:shadow-sm'
+                : 'bg-amber-50 border-amber-600 text-amber-950 hover:bg-amber-100 hover:shadow-sm'
+            }`}
+            title={
+              !isMock
+                ? 'LIVE MODE: Connected to live Hardhat/Sepolia EVM and AI Microservice. Click to switch to Demo Mode.'
+                : 'DEMO MODE: Offline simulated smart contracts. Click to switch to Live Mode.'
+            }
+          >
+            <span className="relative flex h-2.5 w-2.5">
+              <span
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                  !isMock ? 'bg-emerald-500' : 'bg-amber-500'
                 }`}
-                title="Switch to Alice (Client)"
-              >
-                Client
-              </button>
-              <button
-                onClick={() => switchDemoAccount('FREELANCER')}
-                className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-heading font-semibold transition-all ${
-                  (user?.role || '').toUpperCase() === 'FREELANCER'
-                    ? 'bg-forest text-ivory shadow-xs'
-                    : 'text-ink/60 hover:text-ink hover:bg-sage/40'
+              />
+              <span
+                className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                  !isMock ? 'bg-emerald-600' : 'bg-amber-500'
                 }`}
-                title="Switch to Bob (Freelancer)"
-              >
-                Freelancer
-              </button>
-            </div>
-          )}
+              />
+            </span>
+            <span className="tracking-wide">
+              {!isMock ? 'LIVE MODE' : 'DEMO MODE'}
+            </span>
+            <span
+              className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold tracking-tight uppercase ${
+                !isMock
+                  ? 'bg-emerald-200/80 text-emerald-900 group-hover:bg-emerald-200'
+                  : 'bg-amber-200/80 text-amber-900 group-hover:bg-amber-200'
+              }`}
+            >
+              Toggle
+            </span>
+          </button>
+
+          {/* Quick Persona Switcher (Client vs Freelancer) */}
+          <div className="flex items-center bg-white border border-gray rounded-full p-0.5 shadow-xs">
+            <button
+              onClick={() => switchDemoAccount('CLIENT')}
+              className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-heading font-semibold transition-all ${
+                (user?.role || '').toUpperCase() === 'CLIENT'
+                  ? 'bg-forest text-ivory shadow-xs'
+                  : 'text-ink/60 hover:text-ink hover:bg-sage/40'
+              }`}
+              title="Switch to Alice (Client)"
+            >
+              Client
+            </button>
+            <button
+              onClick={() => switchDemoAccount('FREELANCER')}
+              className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-heading font-semibold transition-all ${
+                (user?.role || '').toUpperCase() === 'FREELANCER'
+                  ? 'bg-forest text-ivory shadow-xs'
+                  : 'text-ink/60 hover:text-ink hover:bg-sage/40'
+              }`}
+              title="Switch to Bob (Freelancer)"
+            >
+              Freelancer
+            </button>
+          </div>
 
           {/* Prominent coral "+ New Project" button */}
           <Button

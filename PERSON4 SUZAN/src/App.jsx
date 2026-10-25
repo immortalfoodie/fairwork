@@ -6,6 +6,7 @@ import TopBar from './components/common/TopBar.jsx';
 import Footer from './components/common/Footer.jsx';
 import NetworkBanner from './components/common/NetworkBanner.jsx';
 import ConnectWalletModal from './components/common/ConnectWalletModal.jsx';
+import ErrorBoundary from './components/common/ErrorBoundary.jsx';
 
 import LandingPage from './pages/LandingPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
@@ -58,12 +59,12 @@ function AppLayout() {
 
   return (
     <div className="min-h-screen bg-ivory text-ink flex flex-col font-sans">
-      <NetworkBanner />
       <ConnectWalletModal />
 
       {isLandingView ? (
         // Fullscreen Landing Page
         <div className="flex-1 flex flex-col">
+          <NetworkBanner />
           <LandingPage
             setActivePage={setActivePage}
             onOpenAgreement={handleOpenAgreement}
@@ -84,6 +85,7 @@ function AppLayout() {
 
           {/* Main Content Area */}
           <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
+            <NetworkBanner />
             <TopBar
               onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
               setActivePage={setActivePage}
@@ -104,6 +106,8 @@ function AppLayout() {
               {activePage === 'projects' && (
                 <CommunityPage
                   onNavigateToChat={handleNavigateToChat}
+                  onOpenDraft={handleOpenDraft}
+                  onOpenAgreement={handleOpenAgreement}
                   externalSearchQuery={projectFilterQuery}
                   isCreateModalForcedOpen={isCreateProjectModalOpen}
                   onCloseCreateModal={() => setIsCreateProjectModalOpen(false)}
@@ -184,10 +188,12 @@ function AppLayout() {
 
 export default function App() {
   return (
-    <ToastProvider>
-      <WalletProvider>
-        <AppLayout />
-      </WalletProvider>
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <WalletProvider>
+          <AppLayout />
+        </WalletProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }

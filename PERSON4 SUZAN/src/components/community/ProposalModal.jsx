@@ -27,9 +27,14 @@ export default function ProposalModal({ isOpen, onClose, post, onSubmitted, onPr
 
     try {
       setIsSubmitting(true);
+      const numMatch = price.match(/[\d.]+/);
+      const parsedNum = numMatch ? parseFloat(numMatch[0]) : 1.0;
+
       const proposal = await createProposal(post.id, {
         price: (price.includes('ETH') || price.includes('MATIC')) ? price.replace('MATIC', 'ETH').trim() : `${price.trim()} ETH`,
-        message: message.trim()
+        proposedBudget: parsedNum,
+        message: message.trim(),
+        coverLetter: message.trim()
       });
       toast.success('Proposal submitted successfully!');
       if (typeof onProposalSubmitted === 'function') onProposalSubmitted(proposal);

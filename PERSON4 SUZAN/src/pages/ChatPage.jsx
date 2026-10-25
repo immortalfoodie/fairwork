@@ -108,20 +108,28 @@ export default function ChatPage({ activeThreadId, onOpenDraftReview }) {
   }, [messages]);
 
   const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!inputText.trim() || !selectedThreadId) return;
+    if (e && e.preventDefault) e.preventDefault();
+    const trimmed = inputText.trim();
+    if (!trimmed || !selectedThreadId || isSending) return;
 
     try {
       setIsSending(true);
-      const newMsg = await sendMessage(selectedThreadId, inputText.trim());
+      const newMsg = await sendMessage(selectedThreadId, trimmed);
       setMessages(prev => [...prev, newMsg]);
       setInputText('');
     } catch (err) {
+      console.error('Failed to send message:', err);
       toast.error('Failed to send message');
     } finally {
       setIsSending(false);
     }
   };
+
+  const currentThread = threads.find(t => t.id === selectedThreadId);
+  const currentParticipants = getThreadParticipants(currentThread);
+  const counterparty = currentParticipants.find(p => typeof p === 'string' && address && typeof address === 'string' && p.toLowerCase() !== address.toLowerCase())
+    || currentParticipants[0]
+    || DEMO_ACCOUNTS.FREELANCER.address;
 
   const handleGenerateAgreement = async () => {
     if (!selectedThreadId) return;
@@ -129,7 +137,13 @@ export default function ChatPage({ activeThreadId, onOpenDraftReview }) {
     try {
       setIsDrafting(true);
       toast.info('Advisory AI is parsing chat context and synthesizing AgreementTerms...');
-      const result = await draftAgreement(selectedThreadId);
+      const result = await draftAgreement(selectedThreadId, {
+        freelancerId: counterparty,
+        freelancerAddress: counterparty,
+        otherAddress: counterparty,
+        postId: currentThread?.postId,
+        title: currentThread?.postTitle || 'Web3 Smart Contract & Frontend Development'
+      });
       toast.success('Agreement terms drafted by AI! Redirecting to review...');
       setIsAiModalOpen(false);
       if (onOpenDraftReview) {
@@ -141,12 +155,6 @@ export default function ChatPage({ activeThreadId, onOpenDraftReview }) {
       setIsDrafting(false);
     }
   };
-
-  const currentThread = threads.find(t => t.id === selectedThreadId);
-  const currentParticipants = getThreadParticipants(currentThread);
-  const counterparty = currentParticipants.find(p => address && p.toLowerCase() !== address.toLowerCase())
-    || currentParticipants[0]
-    || DEMO_ACCOUNTS.FREELANCER.address;
 
   return (
     <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8 animate-fade-in">
@@ -172,7 +180,7 @@ export default function ChatPage({ activeThreadId, onOpenDraftReview }) {
               threads.map(t => {
                 const isSelected = t.id === selectedThreadId;
                 const parts = getThreadParticipants(t);
-                const other = parts.find(p => address && p.toLowerCase() !== address.toLowerCase())
+                const other = parts.find(p => typeof p === 'string' && address && typeof address === 'string' && p.toLowerCase() !== address.toLowerCase())
                   || parts[0]
                   || t.postTitle
                   || 'Counterparty';
@@ -253,8 +261,16 @@ export default function ChatPage({ activeThreadId, onOpenDraftReview }) {
                   </div>
                 ) : (
                   messages.map((m, idx) => {
-                    const senderAddr = m.senderAddress || m.sender || m.sender?.walletAddress || '';
-                    const isMe = address && senderAddr && senderAddr.toLowerCase() === address.toLowerCase();
+                    const senderAddr = typeof m.sender === 'object' && m.sender !== null
+                      ? (m.sender.walletAddress || '')
+                      : (typeof m.sender === 'string' ? m.sender : (m.senderAddress || ''));
+                    const isMe = Boolean(
+                      address &&
+                      senderAddr &&
+                      typeof senderAddr === 'string' &&
+                      typeof address === 'string' &&
+                      senderAddr.toLowerCase() === address.toLowerCase()
+                    );
                     const textBody = m.content || m.text || '';
 
                     return (
@@ -287,6 +303,12 @@ export default function ChatPage({ activeThreadId, onOpenDraftReview }) {
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage(e);
+                    }
+                  }}
                   placeholder="Discuss milestone deliverables, budget, and acceptance criteria..."
                   className="flex-1 bg-ivory text-ink border border-gray rounded-[10px] px-3.5 py-2 text-xs placeholder:text-ink/40 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/20"
                 />

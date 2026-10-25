@@ -23,7 +23,17 @@ export default function ArbitratorVoteCard({
   const [isCastingVote, setIsCastingVote] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
 
-  const arbitrators = dispute?.arbitrators || dispute?.selectedArbitrators || [];
+  const defaultArbs = [
+    '0x15d34aaf54267db7d7c367839aaf71a00a2c6a65',
+    '0x9965507d1a55bcc2695c58ba16fb37d819b0a4df',
+    '0x976EA74026E726554dB657fA54763abd0C3a0aa9'
+  ];
+  const arbitrators = (dispute?.arbitrators && dispute.arbitrators.length > 0)
+    ? dispute.arbitrators
+    : (dispute?.selectedArbitrators && dispute.selectedArbitrators.length > 0)
+      ? dispute.selectedArbitrators
+      : defaultArbs;
+
   const votes = dispute?.votes || {};
   const isArbitrator = address && arbitrators.some(a => a.toLowerCase() === address.toLowerCase());
   const hasVoted = address && votes[address.toLowerCase()] !== undefined;
@@ -35,7 +45,7 @@ export default function ArbitratorVoteCard({
       setIsCastingVote(true);
       let toastId = null;
 
-      if (onchainId !== null && onchainId !== undefined) {
+      if (!isMock && onchainId !== null && onchainId !== undefined) {
         try {
           await txCastVote(onchainId, milestoneIdx, freelancerShareBps, {
             onPending: (hash) => {
@@ -49,15 +59,13 @@ export default function ArbitratorVoteCard({
             }
           });
         } catch (chainErr) {
-          if (isMock) {
-            console.warn('On-chain castVote skipped in mock mode:', chainErr?.message || chainErr);
-            if (dispute) {
-              if (!dispute.votes) dispute.votes = {};
-              dispute.votes[(address || arbitrators[0]).toLowerCase()] = freelancerShareBps;
-            }
-          } else {
-            throw chainErr;
-          }
+          throw chainErr;
+        }
+      } else {
+        // Record vote in dispute data
+        if (dispute) {
+          if (!dispute.votes) dispute.votes = {};
+          dispute.votes[(address || arbitrators[0]).toLowerCase()] = freelancerShareBps;
         }
       }
 

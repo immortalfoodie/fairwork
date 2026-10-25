@@ -27,7 +27,7 @@ export default function Sidebar({
   setIsMobileOpen,
   onOpenCreateProject,
 }) {
-  const { address, user, isOwner, isConnected, openConnectModal } = useWallet();
+  const { address, user, isOwner, isConnected, openConnectModal, isMock, toggleAppMode } = useWallet();
 
   const role = (user?.role || 'CLIENT').toUpperCase();
   const isClient = role === 'CLIENT';
@@ -134,6 +134,25 @@ export default function Sidebar({
           );
         })}
       </nav>
+
+      {/* Mode Status Pill */}
+      <div className="px-3 pt-2">
+        <button
+          onClick={() => toggleAppMode && toggleAppMode()}
+          className={`w-full flex items-center justify-between p-2 rounded-[8px] border text-xs font-heading font-semibold transition-all cursor-pointer ${
+            !isMock
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-950 hover:bg-emerald-100 shadow-xs'
+              : 'bg-amber-50 border-amber-300 text-amber-950 hover:bg-amber-100 shadow-xs'
+          }`}
+          title="Click to toggle between Live and Demo modes"
+        >
+          <div className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full ${!isMock ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+            <span>{!isMock ? 'Live EVM Mode' : 'Demo Mode'}</span>
+          </div>
+          <span className="text-[10px] uppercase font-mono px-1 rounded bg-black/5 text-ink/60">Switch</span>
+        </button>
+      </div>
 
       {/* User profile section at the bottom */}
       <div className="p-3.5 m-3 bg-white/80 border border-gray rounded-card shadow-sm">
