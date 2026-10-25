@@ -9,6 +9,7 @@
     "chain": "npm --prefix \"PERSON1 YASH NAIK/contracts\" run chain",
     "deploy": "npm --prefix \"PERSON1 YASH NAIK/contracts\" run deploy:local",
     "seed": "npm --prefix \"PERSON1 YASH NAIK/contracts\" run seed",
+    "seed:sepolia": "npm --prefix \"PERSON1 YASH NAIK/contracts\" run seed:sepolia",
     "setup": "node scripts/setup-demo.js",
     "ai": "powershell -Command \"& 'PERSON3 YASHDEEP/venv/Scripts/python.exe' -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --app-dir 'PERSON3 YASHDEEP'\"",
     "backend": "npm --prefix \"PERSON2 DHRUV/backend\" run dev",

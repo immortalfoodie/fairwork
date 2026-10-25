@@ -3,17 +3,23 @@ const fs = require("fs");
 const path = require("path");
 
 async function main() {
-  const deploymentFile = path.resolve(__dirname, "../../shared/deployments/localhost.json");
+  const networkName = hre.network.name || "localhost";
+  const sharedDir = fs.existsSync(path.resolve(__dirname, "../../shared"))
+    ? path.resolve(__dirname, "../../shared")
+    : path.resolve(__dirname, "../../../shared");
 
-  if (!fs.existsSync(deploymentFile)) {
-    console.error("Error: shared/deployments/localhost.json not found.");
-    console.error("Run 'npm run deploy:local' or 'npm run seed' first!");
-    process.exit(1);
+  let address = process.env.CONTRACT_ADDRESS;
+  const deploymentFile = path.join(sharedDir, "deployments", `${networkName}.json`);
+
+  if (fs.existsSync(deploymentFile)) {
+    const data = JSON.parse(fs.readFileSync(deploymentFile, "utf8"));
+    address = data.address || address;
+  } else if (!address) {
+    address = networkName === "sepolia" ? "0xc1C0415872eA86DfdA31615B9Ad94d795974CA1e" : "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   }
 
-  const { address } = JSON.parse(fs.readFileSync(deploymentFile, "utf8"));
   console.log("==================================================");
-  console.log(`Inspecting FairWork Contract at: ${address}`);
+  console.log(`Inspecting FairWork Contract on [${networkName}] at: ${address}`);
   console.log("==================================================");
 
   const fairWork = await hre.ethers.getContractAt("FairWork", address);
@@ -78,21 +84,27 @@ async function main() {
   // 3. Query Past Event Logs
   console.log("\n--------------------------------------------------");
   console.log("Recent Contract Events On-Chain:");
-  const filter = {
-    address: address,
-    fromBlock: 0,
-    toBlock: "latest",
-  };
-  const logs = await hre.ethers.provider.getLogs(filter);
-  console.log(`Total events emitted: ${logs.length}`);
+  try {
+    const latestBlock = await hre.ethers.provider.getBlockNumber();
+    const fromBlock = networkName === "localhost" ? 0 : Math.max(0, latestBlock - 5000);
+    const filter = {
+      address: address,
+      fromBlock: fromBlock,
+      toBlock: "latest",
+    };
+    const logs = await hre.ethers.provider.getLogs(filter);
+    console.log(`Total events emitted in blocks [${fromBlock} - ${latestBlock}]: ${logs.length}`);
 
-  for (const log of logs.slice(-10)) {
-    try {
-      const parsed = fairWork.interface.parseLog(log);
-      if (parsed) {
-        console.log(`  - Event [${parsed.name}]: tx ${log.transactionHash.slice(0, 18)}... block #${log.blockNumber}`);
-      }
-    } catch (e) {}
+    for (const log of logs.slice(-10)) {
+      try {
+        const parsed = fairWork.interface.parseLog(log);
+        if (parsed) {
+          console.log(`  - Event [${parsed.name}]: tx ${log.transactionHash.slice(0, 18)}... block #${log.blockNumber}`);
+        }
+      } catch (e) {}
+    }
+  } catch (err) {
+    console.log(`(Event logs query skipped: ${err.message})`);
   }
 
   console.log("==================================================");

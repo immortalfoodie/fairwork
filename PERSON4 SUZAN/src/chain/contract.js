@@ -66,13 +66,13 @@ export async function fetchContractConfig(targetChainId) {
     } catch {}
   }
   if (!currentChainId || isNaN(Number(currentChainId))) {
-    currentChainId = Number(import.meta.env.VITE_CHAIN_ID || 31337);
+    currentChainId = Number(import.meta.env.VITE_CHAIN_ID || 11155111);
   }
 
   const net = SUPPORTED_NETWORKS[currentChainId];
   return {
     chainId: currentChainId,
-    contractAddress: net?.contractAddress || import.meta.env.VITE_CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+    contractAddress: net?.contractAddress || import.meta.env.VITE_CONTRACT_ADDRESS || '0xc1C0415872eA86DfdA31615B9Ad94d795974CA1e',
     abi: FAIRWORK_ABI
   };
 }
@@ -92,14 +92,14 @@ export function getProvider() {
  * Get fallback JSON-RPC provider.
  */
 export function getFallbackProvider() {
-  let chainId = 31337;
+  let chainId = 11155111;
   if (typeof window !== 'undefined' && window.ethereum?.chainId) {
     try {
       chainId = parseInt(window.ethereum.chainId, 16);
     } catch {}
   }
   if (!chainId || isNaN(Number(chainId))) {
-    chainId = Number(import.meta.env.VITE_CHAIN_ID || 31337);
+    chainId = Number(import.meta.env.VITE_CHAIN_ID || 11155111);
   }
 
   if (chainId === 31337) {
@@ -120,23 +120,23 @@ export async function getContractWithSigner() {
   const cfg = await fetchContractConfig();
   const provider = getProvider();
 
-  if (provider && window.ethereum?.selectedAddress) {
+  // 1. Prefer active browser MetaMask signer if available
+  if (provider) {
     try {
       const signer = await provider.getSigner();
-
-      return new Contract(
-        cfg.contractAddress,
-        cfg.abi || FAIRWORK_ABI,
-        signer
-      );
+      if (signer) {
+        return new Contract(
+          cfg.contractAddress,
+          cfg.abi || FAIRWORK_ABI,
+          signer
+        );
+      }
     } catch (err) {
-      console.warn(
-        'MetaMask signer unavailable:',
-        err
-      );
+      console.warn('MetaMask active signer not ready, trying stored account:', err);
     }
   }
 
+  // 2. Demo persona fallback with local private key (for local simulation/Hardhat)
   const savedAddr = (
     localStorage.getItem('fairwork_user_address') || ''
   ).toLowerCase();
@@ -173,8 +173,7 @@ export async function getContractWithSigner() {
   }
 
   throw new Error(
-    'MetaMask or Web3 wallet is not installed. ' +
-    'Please use a demo account or install MetaMask.'
+    'MetaMask or Web3 wallet is not connected. Please connect MetaMask to Sepolia Testnet.'
   );
 }
 

@@ -9,6 +9,7 @@
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
     "deploy:amoy": "hardhat run scripts/deploy.js --network polygonAmoy",
     "seed": "hardhat run scripts/seed.js --network localhost",
+    "seed:sepolia": "hardhat run scripts/seed-sepolia.js --network sepolia",
     "node": "hardhat node",
     "chain": "hardhat node"
   },
